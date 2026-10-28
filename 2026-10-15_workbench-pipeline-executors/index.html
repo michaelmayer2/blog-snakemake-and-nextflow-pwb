@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="TODO: author name">
+<meta name="dcterms.date" content="2026-10-15">
+<meta name="description" content="Two new experimental executors let Snakemake and Nextflow run every pipeline step as a Posit Workbench Job. Two Positron extensions let you start those pipelines and follow them from your IDE.">
+
+<title>Snakemake and Nextflow on Posit Workbench and in Positron</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="index_files/libs/clipboard/clipboard.min.js"></script>
+<script src="index_files/libs/quarto-html/quarto.js"></script>
+<script src="index_files/libs/quarto-html/popper.min.js"></script>
+<script src="index_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="index_files/libs/quarto-html/anchor.min.js"></script>
+<link href="index_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="index_files/libs/quarto-html/quarto-syntax-highlighting-01c78b5cd655e4cd89133cf59d535862.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="index_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="index_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="index_files/libs/bootstrap/bootstrap-e19dc0c07aeef78048e587c3f1edba7a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Snakemake and Nextflow on Posit Workbench and in Positron</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">Posit Workbench</div>
+    <div class="quarto-category">Positron</div>
+    <div class="quarto-category">Snakemake</div>
+    <div class="quarto-category">Nextflow</div>
+    <div class="quarto-category">Bioinformatics</div>
+    <div class="quarto-category">Kubernetes</div>
+    <div class="quarto-category">Slurm</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    <p>Two new experimental executors let Snakemake and Nextflow run every pipeline step as a Posit Workbench Job. Two Positron extensions let you start those pipelines and follow them from your IDE.</p>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>TODO: author name </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">October 15, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p><img src="images/snakemake-nextflow-logos.png" class="img-fluid" alt="The Snakemake and Nextflow logos"></p>
+<p>Pipeline managers like <a href="https://snakemake.readthedocs.io/">Snakemake</a> and <a href="https://www.nextflow.io/">Nextflow</a> are standard tools in bioinformatics and in many other data-heavy fields. They split a workflow into steps, work out which steps can run at the same time, and send each step to a compute backend: your laptop, an HPC scheduler, a cloud batch service, or Kubernetes.</p>
+<p>This post introduces two new pieces for running these pipelines on <a href="https://posit.co/products/enterprise/workbench/">Posit Workbench</a>:</p>
+<ol type="1">
+<li><a href="#part-1-run-every-step-as-a-workbench-job"><strong>Workbench executors</strong></a> for Snakemake and Nextflow, which run every step of a pipeline as a Workbench Job. They work from any terminal, with or without Positron.</li>
+<li><a href="#part-2-start-and-follow-pipelines-in-positron"><strong>Positron extensions</strong></a> for Snakemake and Nextflow, which start those pipelines from your editor and follow each step live.</li>
+</ol>
+<blockquote class="blockquote">
+<p><strong>Status: experimental.</strong> Everything in this post works end to end. We’ve run real pipelines with it, including the RNA-seq example below. It is still experimental, though: configuration options may change, and some features (listed at the end) aren’t there yet. We’d love your feedback, bug reports, and feature requests. Please open an issue on any of the repositories.</p>
+</blockquote>
+<section id="part-1-run-every-step-as-a-workbench-job" class="level2">
+<h2 class="anchored" data-anchor-id="part-1-run-every-step-as-a-workbench-job">Part 1: Run every step as a Workbench Job</h2>
+<p>If you use Workbench, there’s already a compute backend next to your IDE: the Workbench Job Launcher. It knows your cluster, your resource profiles, your container images, and who you are. Two new executors let your pipelines use it:</p>
+<ul>
+<li><a href="https://github.com/sol-eng/posit-sdk-snakemake"><strong><code>posit-sdk-snakemake</code></strong></a>, a Snakemake executor plugin (<code>--executor workbench</code>).</li>
+<li><a href="https://github.com/sol-eng/posit-sdk-nextflow"><strong><code>posit-sdk-nextflow</code></strong></a>, a Nextflow executor plugin (<code>executor = 'workbench'</code>).</li>
+</ul>
+<p>With either one, every rule or process in your pipeline runs as its own Workbench Job. Jobs appear in the Workbench Jobs UI, run under your identity, and follow the limits your administrator has set. This works on every Workbench cluster type: Kubernetes, Slurm, and the Local launcher.</p>
+<section id="why-route-pipeline-jobs-through-workbench" class="level3">
+<h3 class="anchored" data-anchor-id="why-route-pipeline-jobs-through-workbench">Why route pipeline jobs through Workbench?</h3>
+<p>This idea isn’t new. The <a href="https://opensource.posit.co/blog/2026-02-12_mirai-2-6-0/#posit-workbench">mirai 2.6.0 release</a> added a Workbench launcher: one call to <code>http_config()</code> and mirai’s daemons start as Workbench Jobs. The new executors do the same thing for pipeline managers. The pipeline engine decides <em>what</em> to run and <em>when</em>, and Workbench decides <em>where</em> and <em>how</em>.</p>
+<p>This matters most when Workbench runs on <strong>Kubernetes</strong>. Running pipeline steps on Kubernetes yourself usually means one of two things:</p>
+<ol type="1">
+<li><strong>Talking to the Kubernetes API directly.</strong> Snakemake’s and Nextflow’s own Kubernetes executors need a service account, RBAC permissions to create pods, and access to a namespace. In many organizations data scientists don’t get that, for good reason.</li>
+<li><strong>Running containers inside your session.</strong> Per-step containers usually mean Docker, Podman, or Apptainer/Singularity. Inside a Kubernetes pod those typically need elevated privileges, which locked-down clusters don’t grant.</li>
+</ol>
+<p>The Workbench executors avoid both. Workbench already has the permissions it needs to start containerized jobs on the cluster. The executors only call the Workbench API, and they do it from user space. A step’s container image (<code>container:</code> in Snakemake, <code>container</code> in Nextflow) becomes the image of that step’s Workbench Job, and the step runs natively inside it. You don’t need a container runtime in your session, Kubernetes credentials, or any special privileges.</p>
+<p>Kubernetes isn’t the only option. The executors work with any Workbench cluster type: <strong>Kubernetes</strong>, <strong>Slurm</strong>, and the <strong>Local</strong> launcher. You choose the target with a single setting (<code>workbench-cluster</code> in Snakemake, <code>workbench.cluster</code> in Nextflow), so the same pipeline can move from a Local cluster to Slurm or Kubernetes without other changes. Per-step container images apply on clusters that support containers. On other clusters, steps run in the job’s default environment, so the tools each step needs must be installed there.</p>
+<p>Authentication follows the same two paths in both projects:</p>
+<ul>
+<li><strong>Inside a Workbench session or job</strong> (for example, a terminal in Positron or RStudio Pro): there’s nothing to configure. The executors use the session’s or job’s own credentials automatically.</li>
+<li><strong>Anywhere else</strong> (a laptop or CI): set <code>WORKBENCH_SERVER</code> and <code>WORKBENCH_API_KEY</code>.</li>
+</ul>
+</section>
+<section id="how-it-works" class="level3">
+<h3 class="anchored" data-anchor-id="how-it-works">How it works</h3>
+<p>Both executors talk to the Workbench API themselves, with a small client built into each one. Neither needs any other Workbench library, but each one fits into its pipeline engine in its own way.</p>
+<p><strong>Snakemake</strong> has an official <a href="https://github.com/snakemake/snakemake-interface-executor-plugins">executor plugin interface</a>. <code>snakemake-executor-plugin-workbench</code> is a Python package that implements it, and its Workbench client uses only Python’s standard library. Snakemake finds it automatically once it’s installed, and each rule instance becomes a Workbench Job. Rule <code>threads</code> map to the job’s CPU count, and <code>resources.mem_mb</code> maps to its memory. To use one of the cluster’s resource profiles, set <code>--workbench-resource-profile</code>, or override it for a single rule with <code>resources: workbench_resource_profile="large"</code>.</p>
+<p>The same package includes a logger plugin (<code>--logger workbench</code>) that writes a run’s progress to a file as it happens, and a <code>posit-workbench-smk-launcher</code> command-line tool for listing clusters and finding, stopping, or submitting Workbench Jobs. Every job is tagged with its run, rule, and job number, so you can find all the jobs of one run later.</p>
+<p><strong>Nextflow</strong> plugins run on the JVM. <code>nf-workbench</code> is a Nextflow plugin that extends Nextflow’s grid-executor base class, the one behind the built-in Slurm, LSF, and SGE executors. Where those call their scheduler’s tools (<code>sbatch</code>, <code>squeue</code>, and <code>scancel</code> for Slurm), <code>nf-workbench</code> calls the Workbench API directly, with the JDK’s HTTP client. It needs nothing else: no Python and no command-line tool.</p>
+<p>Because <code>nf-workbench</code> behaves like a grid executor, the usual Nextflow executor settings (<code>queueSize</code>, <code>submitRateLimit</code>, <code>pollInterval</code>, and so on) work as you’d expect. The <code>cpus</code> and <code>memory</code> directives map to Workbench resource limits, and you can select a Workbench resource profile for the whole pipeline or for individual processes:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode groovy code-with-copy"><code class="sourceCode groovy"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>plugins <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    id <span class="st">'nf-workbench@0.4.0'</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>process <span class="op">{</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    executor <span class="op">=</span> <span class="st">'workbench'</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    withLabel<span class="op">:</span> <span class="st">'big_mem'</span> <span class="op">{</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        ext<span class="op">.</span>resourceProfile <span class="op">=</span> <span class="st">'large'</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>workbench <span class="op">{</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    cluster         <span class="op">=</span> <span class="st">'Kubernetes'</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    resourceProfile <span class="op">=</span> <span class="st">'small'</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The repository also has <code>posit-workbench-nf-launcher</code>, an optional Python tool for submitting, listing, and stopping Workbench Jobs from a terminal or a script.</p>
+<p>Both executors expect a <strong>shared filesystem</strong> between the place you run <code>snakemake</code> or <code>nextflow</code> and the place Workbench runs jobs. In practice that’s your home directory or a project share. Snakemake’s remote executors and Nextflow’s grid executors make the same assumption.</p>
+</section>
+<section id="example-an-rna-seq-pipeline" class="level3">
+<h3 class="anchored" data-anchor-id="example-an-rna-seq-pipeline">Example: an RNA-seq pipeline</h3>
+<p>Each repository includes the same small RNA-seq quantification pipeline, adapted from the <a href="https://github.com/nextflow-io/rnaseq-nf">nextflow-io/rnaseq-nf</a> tutorial. Both versions use the same tools, container images, and test data (a slice of a chicken transcriptome and four paired-end samples, about 6 MB), and they produce the same results:</p>
+<pre class="text"><code>                     +--&gt; FastQC (x N samples) --+
+  reads (N samples) -+                           +--&gt; MultiQC
+                     +--&gt; quant  (x N samples) --+
+                             ^
+  transcriptome --&gt; index ---+  (one Salmon index, reused by every quant job)</code></pre>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Step</th>
+<th>Tool</th>
+<th>Runs</th>
+<th>Parallelism</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>index</td>
+<td>Salmon</td>
+<td>once</td>
+<td>Starts immediately, alongside FastQC</td>
+</tr>
+<tr class="even">
+<td>fastqc</td>
+<td>FastQC</td>
+<td>per sample</td>
+<td>One job per sample, all at once</td>
+</tr>
+<tr class="odd">
+<td>quant</td>
+<td>Salmon</td>
+<td>per sample</td>
+<td>All start as soon as the index is ready</td>
+</tr>
+<tr class="even">
+<td>multiqc</td>
+<td>MultiQC</td>
+<td>once</td>
+<td>Waits for all per-sample results</td>
+</tr>
+</tbody>
+</table>
+<p>Every step uses its own <a href="https://biocontainers.pro/">BioContainers</a> image from <code>quay.io</code>. With four samples, the pipeline submits ten Workbench Jobs, and up to eight run at the same time.</p>
+<p>The commands below target a cluster named <code>Kubernetes</code>. To run on a Slurm or Local cluster instead, change the cluster name. If that cluster doesn’t run containers, make sure Salmon, FastQC, and MultiQC are available in the job environment.</p>
+<section id="snakemake" class="level4">
+<h4 class="anchored" data-anchor-id="snakemake">Snakemake</h4>
+<p>Each rule declares its own container and resources:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>rule quant:</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">input</span>:</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        index<span class="op">=</span><span class="st">"results/index"</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        r1<span class="op">=</span><span class="st">"data/ggal_</span><span class="sc">{sample}</span><span class="st">_1.fq"</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        r2<span class="op">=</span><span class="st">"data/ggal_</span><span class="sc">{sample}</span><span class="st">_2.fq"</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    output: directory(<span class="st">"results/quant/</span><span class="sc">{sample}</span><span class="st">"</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    container: <span class="st">"docker://quay.io/biocontainers/salmon:1.10.3--h6dccd9a_2"</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    threads: <span class="dv">2</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    resources:</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        mem_mb<span class="op">=</span><span class="dv">2048</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    shell:</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="co">"salmon quant --threads {threads} --libType A -i {input.index} "</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>        <span class="co">"-1 {input.r1} -2 {input.r2} -o {output}"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The <code>docker://</code> prefix is Snakemake’s usual way to write an image URI. The plugin removes it and hands the image straight to Workbench, so you don’t need <code>--software-deployment-method apptainer</code>.</p>
+<p>A workflow profile picks the executor and the target cluster:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># profiles/default/config.yaml</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">executor</span><span class="kw">:</span><span class="at"> workbench</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">workbench-cluster</span><span class="kw">:</span><span class="at"> Kubernetes</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="fu">jobs</span><span class="kw">:</span><span class="at"> </span><span class="dv">10</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">latency-wait</span><span class="kw">:</span><span class="at"> </span><span class="dv">60</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Install the plugin and run the pipeline:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone <span class="at">--branch</span> v0.3.0 https://github.com/sol-eng/posit-sdk-snakemake</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> posit-sdk-snakemake</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> venv</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> pip install <span class="st">".[snakemake]"</span>   <span class="co"># note: not an editable install</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> examples/rnaseq</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="ex">snakemake</span>                        <span class="co"># settings come from profiles/default/config.yaml</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="ex">snakemake</span> <span class="at">-j</span> 2                   <span class="co"># or: at most 2 Workbench Jobs at a time</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>To add the plugin to an existing Snakemake environment instead, run <code>pip install "git+https://github.com/sol-eng/posit-sdk-snakemake@v0.3.0"</code> in it.</p>
+</section>
+<section id="nextflow" class="level4">
+<h4 class="anchored" data-anchor-id="nextflow">Nextflow</h4>
+<p>The Nextflow version looks like any other Nextflow pipeline. Each process has its own <code>container</code>, and labels set its resources:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode groovy code-with-copy"><code class="sourceCode groovy"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>process QUANT <span class="op">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    tag <span class="st">"</span><span class="ss">${</span>sample_id<span class="ss">}</span><span class="st">"</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    label <span class="st">'multi_core'</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    container <span class="st">'quay.io/biocontainers/salmon:1.10.3--h6dccd9a_2'</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    publishDir <span class="st">"</span><span class="ss">${</span>params<span class="op">.</span>outdir<span class="ss">}</span><span class="st">/quant"</span><span class="op">,</span> mode<span class="op">:</span> <span class="st">'copy'</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    input<span class="op">:</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    path index</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    tuple <span class="fu">val</span><span class="op">(</span>sample_id<span class="op">),</span> <span class="fu">path</span><span class="op">(</span>reads<span class="op">)</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    output<span class="op">:</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    path <span class="st">"</span><span class="ss">${</span>sample_id<span class="ss">}</span><span class="st">"</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    script<span class="op">:</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"""</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="st">    salmon quant --threads </span><span class="ss">${</span>task<span class="op">.</span>cpus<span class="ss">}</span><span class="st"> --libType A -i </span><span class="ss">${</span>index<span class="ss">}</span><span class="st"> </span><span class="sc">\\</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="st">        -1 </span><span class="ss">${</span>reads<span class="op">[</span><span class="dv">0</span><span class="op">]</span><span class="ss">}</span><span class="st"> -2 </span><span class="ss">${</span>reads<span class="op">[</span><span class="dv">1</span><span class="op">]</span><span class="ss">}</span><span class="st"> -o </span><span class="ss">${</span>sample_id<span class="ss">}</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="st">    """</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Install the plugin from its <a href="https://github.com/sol-eng/posit-sdk-nextflow/releases">release</a>, then run the pipeline. You need Nextflow 25.10 or later and Java 17 or later:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> ~/.nextflow/plugins/nf-workbench-0.4.0</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">unzip</span> nf-workbench-0.4.0.zip <span class="at">-d</span> ~/.nextflow/plugins/nf-workbench-0.4.0</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/sol-eng/posit-sdk-nextflow</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> posit-sdk-nextflow/examples/rnaseq</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="ex">nextflow</span> run main.nf <span class="at">--workbenchCluster</span> Kubernetes</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The example turns on Nextflow’s execution reports. <code>results/pipeline_info/timeline.html</code> shows the overlapping tasks, and the <code>native_id</code> column in <code>trace.txt</code> holds each task’s Workbench Job ID, so you can find any task in the Workbench Jobs UI.</p>
+</section>
+<section id="parallelism-in-practice" class="level4">
+<h4 class="anchored" data-anchor-id="parallelism-in-practice">Parallelism in practice</h4>
+<p>On a Kubernetes-backed Workbench cluster, with images already pulled, the pipeline finishes in under a minute with the default settings in both engines. If you cap concurrency at two jobs (<code>snakemake -j 2</code> or <code>--workbenchQueueSize 2</code>), it takes noticeably longer, because the independent steps now queue up instead of running side by side. Workbench just sees a stream of jobs, and the pipeline engine decides how many to keep in flight.</p>
+</section>
+</section>
+<section id="headless-runs" class="level3">
+<h3 class="anchored" data-anchor-id="headless-runs">Headless runs</h3>
+<p>The pipeline engine itself, <code>snakemake</code> or <code>nextflow run</code>, can run as a Workbench Job too. That “driver” job then submits each step as a Workbench Job of its own, and the pipeline keeps going when your session is suspended or stopped.</p>
+<p>A driver job started from a Positron or RStudio Pro session needs no credentials passed in: Workbench gives every job credentials of its own, and they keep working after the session has stopped. From a laptop or CI, submit the driver with the launcher tool (<code>posit-workbench-smk-launcher submit</code> or <code>posit-workbench-nf-launcher submit</code>), and pass it <code>WORKBENCH_SERVER</code> and <code>WORKBENCH_API_KEY</code>. Each repository’s documentation has the details. The Positron extensions in Part 2 start such a driver job for you.</p>
+</section>
+</section>
+<section id="part-2-start-and-follow-pipelines-in-positron" class="level2">
+<h2 class="anchored" data-anchor-id="part-2-start-and-follow-pipelines-in-positron">Part 2: Start and follow pipelines in Positron</h2>
+<p>The executors work from any terminal. If you use <a href="https://positron.posit.co/">Positron</a>, two extensions put the whole run in your IDE: <a href="https://github.com/sol-eng/positron-snakemake-extension">Snakemake</a> and <a href="https://github.com/sol-eng/positron-nextflow-extension">Nextflow</a>. Each adds a <strong>Pipeline Runs</strong> view to the engine’s sidebar, and keeps the language support of the upstream VS Code extension it’s forked from. Watch the <a href="https://sol-eng.github.io/positron-snakemake-extension/">Snakemake</a> and <a href="https://sol-eng.github.io/positron-nextflow-extension/">Nextflow</a> demos to see them in action.</p>
+<section id="start-a-run" class="level3">
+<h3 class="anchored" data-anchor-id="start-a-run">Start a run</h3>
+<p><strong>Run Pipeline</strong> asks for the targets or parameters and a profile. With the executor from Part 1 installed, it also asks where the steps should run: in the session, or as Workbench Jobs, and on which cluster and resource profile. To keep the pipeline going while your session is suspended, choose to run the pipeline itself as a Workbench Job (a headless run). On Workbench, the extensions use your session’s credentials, so there’s nothing to set up.</p>
+</section>
+<section id="follow-it" class="level3">
+<h3 class="anchored" data-anchor-id="follow-it">Follow it</h3>
+<p>The view follows the run live, per rule or process and per job. Runs keep going when the window is reloaded or closed, and the next window picks them up again.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/positron-snakemake.png" class="img-fluid figure-img" alt="Positron with the Snakemake Pipeline Runs view listing the jobs of an RNA-seq run, the Snakefile in the editor, and the run's dashboard in the Viewer with a progress bar for each rule."></p>
+<figcaption>The Snakemake RNA-seq example running as Workbench Jobs. Pipeline Runs, on the left, lists every job, with the Workbench Job ID of each one that ran on Workbench. The run’s dashboard, on the right, shows progress per rule.</figcaption>
+</figure>
+</div>
+<p>Click a step to open its <strong>dashboard</strong> in the Viewer: its status, resources, logs, and outputs. HTML outputs such as FastQC reports open in the Viewer too. A run’s dashboard shows progress per rule or process. <strong>Stop</strong> a run, which cancels its Workbench Jobs, or <strong>Cancel</strong> a single job.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/positron-nextflow.png" class="img-fluid figure-img" alt="Positron with the Nextflow Pipeline Runs view showing a running RNA-seq pipeline, and the dashboard of a completed FASTQC task in the Viewer, with a Debug in Console button, its Workbench job ID, resource use and script."></p>
+<figcaption>A Nextflow task’s dashboard, opened while the rest of the run is still going: its Workbench Job, CPU and memory use, work directory, script, and logs.</figcaption>
+</figure>
+</div>
+</section>
+<section id="when-a-step-fails" class="level3">
+<h3 class="anchored" data-anchor-id="when-a-step-fails">When a step fails</h3>
+<p>The run’s dashboard lists the failed steps with their errors. <strong>Debug in Console</strong> sets up the R or Python console the way the step would run, and opens the step’s script so you can step through it. Once it’s fixed, run the pipeline again (Snakemake) or <strong>Resume</strong> it from Nextflow’s cache.</p>
+<p>You can also ask <strong>Posit Assistant</strong>. It can list your runs, explain why one failed from the failed steps’ logs, and start or stop a run after you approve it.</p>
+</section>
+<section id="install" class="level3">
+<h3 class="anchored" data-anchor-id="install">Install</h3>
+<p>Each extension is a VSIX file on its repository’s releases page. Install it with <strong>Extensions: Install from VSIX…</strong> in Positron.</p>
+</section>
+</section>
+<section id="current-limitations" class="level2">
+<h2 class="anchored" data-anchor-id="current-limitations">Current limitations</h2>
+<p>These are the things we know about. Some of them are why this is still labeled experimental.</p>
+<p>The executors:</p>
+<ul>
+<li><strong>A shared filesystem is required.</strong> Inputs, outputs, and logs are exchanged through the working directory. On network filesystems you may need to increase Snakemake’s <code>latency-wait</code> or Nextflow’s <code>exitReadTimeout</code>.</li>
+<li><strong>Only CPU and memory are mapped.</strong> Wall time, disk, and GPU/accelerator requests aren’t passed to Workbench yet.</li>
+<li><strong>Your Python must be visible to the jobs.</strong> For Snakemake on Kubernetes, the virtual environment’s Python has to live on the shared filesystem (for example, a <code>uv</code>-managed Python under your home directory), not on the session image’s system path.</li>
+<li><strong>Headless runs submitted with an API key are the least tested path.</strong> Headless runs started from a Positron session have been tested on a real Workbench cluster. Runs submitted from outside Workbench with <code>WORKBENCH_API_KEY</code> have only run against a stand-in for the Workbench API so far.</li>
+<li><strong>Packaging is manual for now.</strong> The Snakemake plugin installs from GitHub, not PyPI. The Nextflow plugin is a zip file on GitHub releases, not in the Nextflow plugin registry.</li>
+</ul>
+<p>The Positron extensions:</p>
+<ul>
+<li><strong>They aren’t on Open VSX yet.</strong> Install them from their VSIX files.</li>
+</ul>
+</section>
+<section id="try-it-and-tell-us-what-you-think" class="level2">
+<h2 class="anchored" data-anchor-id="try-it-and-tell-us-what-you-think">Try it and tell us what you think</h2>
+<p>Everything here works, and we want it to work well for <em>your</em> pipelines. If you run Snakemake or Nextflow on Posit Workbench, especially on Kubernetes or Slurm, please try it and let us know how it goes:</p>
+<ul>
+<li>Snakemake executor: <a href="https://github.com/sol-eng/posit-sdk-snakemake/issues">sol-eng/posit-sdk-snakemake</a></li>
+<li>Nextflow executor: <a href="https://github.com/sol-eng/posit-sdk-nextflow/issues">sol-eng/posit-sdk-nextflow</a></li>
+<li>Snakemake for Positron: <a href="https://github.com/sol-eng/positron-snakemake-extension/issues">sol-eng/positron-snakemake-extension</a></li>
+<li>Nextflow for Positron: <a href="https://github.com/sol-eng/positron-nextflow-extension/issues">sol-eng/positron-nextflow-extension</a></li>
+</ul>
+<p>Constructive feedback and feature requests are very welcome: things that broke, settings you missed, resources you need mapped, or pipelines (nf-core, anyone?) you’d like to see working.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
